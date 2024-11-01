@@ -23,6 +23,7 @@ const defaultHeaders = [
 let hiddenHeaders = [...defaultHeaders];
 let isEnabled = true;
 let observer = null;
+let headersCollapsed = true; 
 
 const createPage = (sdk) => {
   const container = document.createElement("div");
@@ -34,25 +35,25 @@ const createPage = (sdk) => {
 
   const description = document.createElement("p");
   description.className = "description";
-  description.textContent = "Use this setting to control whether Caido automatically hides the specified HTTP headers. Headers are case insensitive.";
+  description.textContent = "Use this setting to control whether Caido automatically collapses the specified HTTP headers. Headers are case insensitive.";
   container.appendChild(description);
 
   const toggleSection = document.createElement("div");
   toggleSection.className = "toggle-section";
-  
+
   const toggleLabel = document.createElement("label");
   toggleLabel.className = "toggle-label";
-  
+
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
   checkbox.checked = isEnabled;
-  checkbox.onchange = (e) => toggleHeaderHiding(e.target.checked);
-  
-  const toggleText = document.createTextNode("Hide the following headers by default:");
+  checkbox.onchange = (e) => toggleHeaderCollapsing(e.target.checked);
+
+  const toggleText = document.createTextNode("Collapse the following headers by default:");
   toggleLabel.appendChild(checkbox);
   toggleLabel.appendChild(toggleText);
   toggleSection.appendChild(toggleLabel);
-  
+
   container.appendChild(toggleSection);
 
   const headerSection = document.createElement("div");
@@ -60,13 +61,13 @@ const createPage = (sdk) => {
 
   const headerList = document.createElement("div");
   headerList.className = "header-list";
-  
+
   const selectionInfo = document.createElement("div");
   selectionInfo.className = "selection-info";
   selectionInfo.textContent = "Use Shift+Click for range selection or Ctrl/Cmd+Click for multiple selection";
 
   headerList.tabIndex = 0;
-  
+
   let lastSelectedIndex = -1;
 
   const handleHeaderClick = (item, index, e) => {
@@ -74,7 +75,7 @@ const createPage = (sdk) => {
       const items = Array.from(headerList.children);
       const start = Math.min(lastSelectedIndex, index);
       const end = Math.max(lastSelectedIndex, index);
-      
+
       items.forEach((item, i) => {
         if (i >= start && i <= end) {
           item.classList.add('selected');
@@ -90,11 +91,10 @@ const createPage = (sdk) => {
       item.classList.add('selected');
       lastSelectedIndex = index;
     }
-    
+
     updateSelectionCount(headerList);
   };
 
-  // Store handleHeaderClick in the headerList element
   headerList.handleHeaderClick = handleHeaderClick;
 
   headerList.addEventListener('keydown', (e) => {
@@ -110,7 +110,7 @@ const createPage = (sdk) => {
   const removeButton = document.createElement("button");
   removeButton.textContent = "Remove Selected";
   removeButton.onclick = () => removeSelectedHeader(headerList);
-  
+
   const clearButton = document.createElement("button");
   clearButton.textContent = "Clear All";
   clearButton.onclick = () => clearHeaders(headerList);
@@ -162,10 +162,9 @@ const createPage = (sdk) => {
   headerSection.appendChild(selectionInfo);
   headerSection.appendChild(controls);
   headerSection.appendChild(addSection);
-  
+
   container.appendChild(headerSection);
 
-  
   updateHeaderList(headerList);
 
   sdk.navigation.addPage(PLUGIN_PATH, {
@@ -189,14 +188,14 @@ const updateHeaderList = (headerList) => {
     item.onclick = (e) => handleHeaderClick(item, index, e);
     headerList.appendChild(item);
   });
-  
+
   processHeaderElements(document.body);
   updateSelectionCount(headerList);
 };
 
 const selectAllHeaders = (headerList) => {
   if (!headerList) return;
-  
+
   Array.from(headerList.children).forEach(item => {
     item.classList.add('selected');
   });
@@ -205,13 +204,13 @@ const selectAllHeaders = (headerList) => {
 
 const updateSelectionCount = (headerList) => {
   if (!headerList) return;
-  
+
   const selectedCount = headerList.querySelectorAll('.selected').length;
   const totalCount = headerList.children.length;
   const selectionInfo = headerList.parentElement.querySelector('.selection-info');
-  
+
   if (!selectionInfo) return;
-  
+
   if (selectedCount > 0) {
     selectionInfo.textContent = `${selectedCount} of ${totalCount} headers selected`;
   } else {
@@ -223,7 +222,7 @@ const importHeaders = (headerList) => {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = '.txt';
-  
+
   input.onchange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -233,7 +232,7 @@ const importHeaders = (headerList) => {
         const newHeaders = content.split('\n')
           .map(line => line.trim().toLowerCase())
           .filter(line => line && !hiddenHeaders.includes(line));
-        
+
         if (newHeaders.length > 0) {
           hiddenHeaders = [...hiddenHeaders, ...newHeaders];
           updateHeaderList(headerList);
@@ -246,7 +245,7 @@ const importHeaders = (headerList) => {
       reader.readAsText(file);
     }
   };
-  
+
   input.click();
 };
 
@@ -254,7 +253,7 @@ const exportHeaders = () => {
   const content = hiddenHeaders.join('\n');
   const blob = new Blob([content], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
-  
+
   const a = document.createElement('a');
   a.href = url;
   a.download = 'hidden-headers.txt';
@@ -264,36 +263,76 @@ const exportHeaders = () => {
   URL.revokeObjectURL(url);
 };
 
-const hideHeaderElement = (element) => {
-  const headerContainer = element.closest('.cm-line');
-  if (headerContainer) {
-    headerContainer.style.display = 'none';
-    headerContainer.dataset.headerHidden = 'true';
-  }
-};
-
-const showHeaderElement = (element) => {
-  const headerContainer = element.closest('.cm-line');
-  if (headerContainer) {
-    headerContainer.style.display = '';
-    delete headerContainer.dataset.headerHidden;
-  }
-};
-
 const processHeaderElements = (root) => {
   if (!root || !isEnabled) return;
 
-  const headerElements = root.querySelectorAll('.c-lang-http-request__headerName');
-  
-  headerElements.forEach(element => {
-    if (element.closest('.cm-line')?.dataset.headerHidden) return;
+  const editorContent = document.querySelector('.cm-content');
+  if (!editorContent) return;
 
-    const headerName = element.textContent.trim().toLowerCase();
-    const cleanHeaderName = headerName.replace(/[:]\s*$/, '');
-    
-    if (hiddenHeaders.includes(cleanHeaderName)) {
-      hideHeaderElement(element);
+  const headerLines = [];
+  const allLines = editorContent.querySelectorAll('.cm-line');
+  let currentHiddenBlock = [];
+
+  allLines.forEach((lineElement, index) => {
+    const headerNameElement = lineElement.querySelector('.c-lang-http-request__headerName');
+    if (headerNameElement) {
+      const headerName = headerNameElement.textContent.trim().toLowerCase().replace(/[:]\s*$/, '');
+      if (hiddenHeaders.includes(headerName)) {
+        currentHiddenBlock.push(lineElement);
+      } else {
+        if (currentHiddenBlock.length > 0) {
+          headerLines.push([...currentHiddenBlock]);
+          currentHiddenBlock = [];
+        }
+      }
+    } else {
+      if (currentHiddenBlock.length > 0) {
+        headerLines.push([...currentHiddenBlock]);
+        currentHiddenBlock = [];
+      }
     }
+  });
+
+  if (currentHiddenBlock.length > 0) {
+    headerLines.push([...currentHiddenBlock]);
+  }
+
+  
+  editorContent.querySelectorAll('.collapsible-header-block').forEach(block => {
+    block.replaceWith(...block.childNodes);
+  });
+
+  headerLines.forEach(blockLines => {
+    const firstLine = blockLines[0];
+    const collapsibleBlock = document.createElement('div');
+    collapsibleBlock.className = 'collapsible-header-block';
+    const toggleButton = document.createElement('div');
+    toggleButton.className = 'collapsible-toggle';
+    toggleButton.textContent = headersCollapsed ? '[+] Show Hidden Headers' : '[-] Hide Hidden Headers';
+    toggleButton.onclick = () => {
+      headersCollapsed = !headersCollapsed;
+      toggleButton.textContent = headersCollapsed ? '[+] Show Hidden Headers' : '[-] Hide Hidden Headers';
+      blockLines.forEach(line => {
+        if (headersCollapsed) {
+          line.style.display = 'none';
+        } else {
+          line.style.display = '';
+        }
+      });
+    };
+
+    collapsibleBlock.appendChild(toggleButton);
+
+    blockLines.forEach(line => {
+      if (headersCollapsed) {
+        line.style.display = 'none';
+      } else {
+        line.style.display = '';
+      }
+      collapsibleBlock.appendChild(line);
+    });
+
+    firstLine.parentNode.insertBefore(collapsibleBlock, firstLine);
   });
 };
 
@@ -302,17 +341,12 @@ const initializeObserver = () => {
     observer.disconnect();
   }
 
-  observer = new MutationObserver((mutations) => {
-    mutations.forEach(mutation => {
-      mutation.addedNodes.forEach(node => {
-        if (node.nodeType === Node.ELEMENT_NODE) {
-          processHeaderElements(node);
-          setTimeout(() => processHeaderElements(node), 100);
-        }
-      });
+  processHeaderElements(document.body);
 
-      if (mutation.type === 'attributes' && mutation.target.nodeType === Node.ELEMENT_NODE) {
-        processHeaderElements(mutation.target);
+  observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'childList' || mutation.type === 'characterData' || mutation.type === 'subtree') {
+        processHeaderElements(document.body);
       }
     });
   });
@@ -320,11 +354,8 @@ const initializeObserver = () => {
   observer.observe(document.body, {
     childList: true,
     subtree: true,
-    attributes: true,
-    attributeFilter: ['class', 'style']
+    characterData: true,
   });
-
-  processHeaderElements(document.body);
 };
 
 const addNewHeader = (header, headerList) => {
@@ -341,65 +372,52 @@ const removeSelectedHeader = (headerList) => {
   if (!headerList) return;
 
   const selected = headerList.querySelectorAll(".selected");
-  const removedHeaders = new Set();
-  
+
   selected.forEach(item => {
     const headerName = item.textContent.toLowerCase();
     hiddenHeaders = hiddenHeaders.filter(h => h !== headerName);
-    removedHeaders.add(headerName);
   });
 
   updateHeaderList(headerList);
   saveHeaders();
-
-  document.querySelectorAll('.c-lang-http-request__headerName').forEach(element => {
-    const headerName = element.textContent.trim().toLowerCase().replace(/[:]\s*$/, '');
-    if (removedHeaders.has(headerName)) {
-      showHeaderElement(element);
-    }
-  });
+  processHeaderElements(document.body);
 };
 
 const clearHeaders = (headerList) => {
   hiddenHeaders = [];
   updateHeaderList(headerList);
   saveHeaders();
-
-  document.querySelectorAll('[data-header-hidden]').forEach(element => {
-    element.style.display = '';
-    delete element.dataset.headerHidden;
-  });
+  processHeaderElements(document.body);
 };
 
-const toggleHeaderHiding = (enabled) => {
+const toggleHeaderCollapsing = (enabled) => {
   isEnabled = enabled;
-  if (enabled) {
-    processHeaderElements(document.body);
-  } else {
-    document.querySelectorAll('[data-header-hidden]').forEach(element => {
-      element.style.display = '';
-      delete element.dataset.headerHidden;
-    });
-  }
+  processHeaderElements(document.body);
   saveHeaders();
 };
 
 const saveHeaders = () => {
   localStorage.setItem('caido-header-hider-headers', JSON.stringify(hiddenHeaders));
   localStorage.setItem('caido-header-hider-enabled', JSON.stringify(isEnabled));
+  localStorage.setItem('caido-header-collapsed', JSON.stringify(headersCollapsed));
 };
 
 const loadSettings = () => {
   try {
     const savedHeaders = localStorage.getItem('caido-header-hider-headers');
     const savedEnabled = localStorage.getItem('caido-header-hider-enabled');
-    
+    const savedCollapsed = localStorage.getItem('caido-header-collapsed');
+
     if (savedHeaders) {
       hiddenHeaders = JSON.parse(savedHeaders);
     }
-    
+
     if (savedEnabled !== null) {
       isEnabled = JSON.parse(savedEnabled);
+    }
+
+    if (savedCollapsed !== null) {
+      headersCollapsed = JSON.parse(savedCollapsed);
     }
   } catch (e) {
     console.error('Error loading header hider settings:', e);
