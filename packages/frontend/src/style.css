@@ -1,9 +1,32 @@
+
 .header-hider {
   padding: 20px;
   color: var(--c-fg-default);
   background-color: var(--c-bg-default);
   min-height: 100vh;
 }
+
+
+.collapsible-header-block {
+  margin-bottom: 10px;
+}
+
+.collapsible-toggle {
+  cursor: pointer;
+  color: var(--c-fg-link);
+  margin-bottom: 5px;
+  user-select: none;
+}
+
+.collapsible-toggle:hover {
+  text-decoration: underline;
+}
+
+
+.collapsible-header-block .cm-line {
+  transition: all 0.2s ease;
+}
+
 
 .header-hider h1 {
   font-size: 24px;
@@ -94,43 +117,11 @@
   flex-wrap: wrap;
 }
 
-.header-hider .header-controls button {
-  position: relative;
-  overflow: hidden;
-  padding: 8px 12px;
-  background-color: #a0213e;
-  color: white;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 500;
-}
-
-.header-hider .header-controls button:after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  transition: width 0.3s, height 0.3s;
-}
-
-.header-hider .header-controls button:hover:after {
-  width: 200%;
-  height: 200%;
-}
-
-.header-hider .header-controls button:hover {
-  background-color: #8a1c36;
-}
-
-.header-hider .header-controls button:active {
-  transform: translateY(1px);
+.header-hider .header-controls .c-button,
+.header-hider .add-section .c-button {
+  background-color: var(--c-bg-button) !important;
+  color: var(--c-fg-button) !important;
+  border: 1px solid var(--c-border-button) !important;
 }
 
 .header-hider .import-export-controls {
@@ -160,19 +151,19 @@
   box-shadow: 0 0 0 2px rgba(160, 33, 62, 0.2);
 }
 
-.header-hider .add-section button {
+.header-hider .button {
   padding: 8px 12px;
-  background-color: #a0213e;
-  color: white;
-  border: none;
+  background-color: var(--c-bg-button);
+  color: var(--c-fg-button);
+  border: 1px solid var(--c-border-button);
   border-radius: 3px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
 }
 
-.header-hider .add-section button:hover {
-  background-color: #8a1c36;
+.header-hider .button:hover {
+  background-color: var(--c-bg-button-hover);
 }
 
 .header-hider .selection-info {
@@ -182,30 +173,36 @@
   text-align: right;
 }
 
+
 @media screen and (max-width: 600px) {
   .header-hider .header-controls {
     flex-direction: column;
   }
-  
+
   .header-hider .import-export-controls {
     margin-left: 0;
     margin-top: 10px;
   }
 }
 
-.header-hider ::-webkit-scrollbar {
+.header-hider .header-list::-webkit-scrollbar {
   width: 8px;
 }
 
-.header-hider ::-webkit-scrollbar-track {
+.header-hider .header-list::-webkit-scrollbar-track {
   background: var(--c-bg-subtle);
 }
 
-.header-hider ::-webkit-scrollbar-thumb {
+.header-hider .header-list::-webkit-scrollbar-thumb {
   background: var(--c-border-default);
   border-radius: 4px;
 }
 
-.header-hider ::-webkit-scrollbar-thumb:hover {
+.header-hider .header-list::-webkit-scrollbar-thumb:hover {
   background: var(--c-border-hover);
+}
+
+
+.header-hider * {
+  box-sizing: border-box;
 }
