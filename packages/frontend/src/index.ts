@@ -1,3 +1,4 @@
+import "./style.css";
 const PLUGIN_PATH = "/header-hider";
 
 const defaultHeaders = [
