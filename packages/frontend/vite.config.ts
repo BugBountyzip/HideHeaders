@@ -5,7 +5,7 @@ export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, "src/index.ts"),
-      name: "plugin-template-frontend",
+      name: "hide-headers-frontend",
       fileName: (format) => "script.js",
       formats: ["es"],
     },
