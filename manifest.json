@@ -1,0 +1,20 @@
+{
+  "id": "cursor-pen",
+  "name": "Screening Drawing",
+  "version": "2.0.0",
+  "description": "A plugin that turns the cursor into a drawing pen",
+  "author": {
+    "name": "Tur24Tur / BugBountyZip",
+    "email": "no-reply@NoBugEscapes.com",
+    "url": "https://github.com/BugBountyzip"
+  },
+  "plugins": [
+    {
+      "kind": "frontend",
+      "id": "cursor-pen-frontend",
+      "name": "Cursor Pen Frontend",
+      "entrypoint": "frontend/script.js",
+      "style": "frontend/style.css"
+    }
+  ]
+}
