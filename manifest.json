@@ -1,7 +1,7 @@
 {
   "id": "hide-headers",
   "name": "Hide Headers",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A plugin that allows users to hide specific HTTP headers from Caido's request view.",
   "author": {
     "name": "Tur24Tur BugBountyZip",
